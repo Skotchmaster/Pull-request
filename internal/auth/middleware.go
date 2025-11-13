@@ -3,8 +3,7 @@ package auth
 import (
 	"net/http"
 	"pull_request/internal/logging"
-
-	httpserv "pull_request/internal/http"
+	"pull_request/internal/apierr"
 
 	"github.com/labstack/echo/v4"
 )
@@ -15,13 +14,13 @@ func (m *Middleware) RequireLogin(logger logging.Logger) echo.MiddlewareFunc {
 			token, err := extractBearerToken(c.Request().Header.Get("Authorization"))
 			if err != nil {
 				logger.Errorf("invalid or missing token", "error", err)
-				return c.JSON(http.StatusUnauthorized, httpserv.NewAPIError(httpserv.ErrCodeUnauthorized, httpserv.ErrMsgUnauthorized))
+				return c.JSON(http.StatusUnauthorized, apierr.NewAPIError(apierr.ErrCodeUnauthorized, apierr.ErrMsgUnauthorized))
 			}
 
 			claims, err := m.parseToken(token)
 			if err != nil {
 				logger.Errorf("invalid or missing token", "error", err)
-				return c.JSON(http.StatusUnauthorized, httpserv.NewAPIError(httpserv.ErrCodeUnauthorized, httpserv.ErrMsgUnauthorized))
+				return c.JSON(http.StatusUnauthorized, apierr.NewAPIError(apierr.ErrCodeUnauthorized, apierr.ErrMsgUnauthorized))
 			}
 
 			user := &UserCtx{
@@ -42,18 +41,18 @@ func (m *Middleware) RequireAdmin(logger logging.Logger) echo.MiddlewareFunc {
 			token, err := extractBearerToken(c.Request().Header.Get("Authorization"))
 			if err != nil {
 				logger.Errorf("invalid or missing token", "error", err)
-				return c.JSON(http.StatusUnauthorized, httpserv.NewAPIError(httpserv.ErrCodeUnauthorized, httpserv.ErrMsgUnauthorized))
+				return c.JSON(http.StatusUnauthorized, apierr.NewAPIError(apierr.ErrCodeUnauthorized, apierr.ErrMsgUnauthorized))
 			}
 
 			claims, err := m.parseToken(token)
 			if err != nil {
 				logger.Errorf("invalid or missing token", "error", err)
-				return c.JSON(http.StatusUnauthorized, httpserv.NewAPIError(httpserv.ErrCodeUnauthorized, httpserv.ErrMsgUnauthorized))
+				return c.JSON(http.StatusUnauthorized, apierr.NewAPIError(apierr.ErrCodeUnauthorized, apierr.ErrMsgUnauthorized))
 			}
 
 			if claims.Role != "admin" {
 				logger.Infof("forbidden: non-admin user tried to access admin endpoint", "user_id", claims.Subject, "role", claims.Role)
-				return c.JSON(http.StatusUnauthorized, httpserv.NewAPIError(httpserv.ErrCodeForbidden, httpserv.ErrMsgAdminRequired))
+				return c.JSON(http.StatusUnauthorized, apierr.NewAPIError(apierr.ErrCodeForbidden, apierr.ErrMsgAdminRequired))
 			}
 
 			user := &UserCtx{
