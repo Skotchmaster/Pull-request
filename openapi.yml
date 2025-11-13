@@ -43,6 +43,8 @@ components:
                 - NOT_ASSIGNED
                 - NO_CANDIDATE
                 - NOT_FOUND
+                - UNAUTHORIZED
+                - FORBIDDEN
             message:
               type: string
       example:
