@@ -21,7 +21,7 @@ type PullRequestRepository interface {
 }
 
 type PullRequestService struct {
-	repo PullRequestRepository
+	Repo PullRequestRepository
 }
 
 type PullRequestDTO struct {
@@ -43,18 +43,18 @@ func toPullRequestDTO(pr *models.PullRequest, reviewers []string) *PullRequestDT
 }
 
 func (s *PullRequestService) CreatePullRequest(ctx context.Context, prID, prName, authorID string) (*PullRequestDTO, error) {
-	if _, err := s.repo.GetByID(ctx, prID); err == nil {
+	if _, err := s.Repo.GetByID(ctx, prID); err == nil {
 		return nil, apierr.ErrPRExists
 	} else if !errors.Is(err, apierr.ErrPRNotFound) {
 		return nil, err
 	}
 
-	author, err := s.repo.GetUserByID(ctx, authorID)
+	author, err := s.Repo.GetUserByID(ctx, authorID)
 	if err != nil {
 		return nil, err
 	}
 
-	members, err := s.repo.GetActiveTeamMembers(ctx, author.TeamName)
+	members, err := s.Repo.GetActiveTeamMembers(ctx, author.TeamName)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s *PullRequestService) CreatePullRequest(ctx context.Context, prID, prName
 		Status:          models.PRStatus("OPEN"),
 	}
 
-	if err := s.repo.CreateWithReviewers(ctx, pr, reviewerIDs); err != nil {
+	if err := s.Repo.CreateWithReviewers(ctx, pr, reviewerIDs); err != nil {
 		return nil, err
 	}
 
@@ -85,19 +85,19 @@ func (s *PullRequestService) CreatePullRequest(ctx context.Context, prID, prName
 }
 
 func (s *PullRequestService) MergePullRequest(ctx context.Context, prID string) (*PullRequestDTO, error) {
-	pr, err := s.repo.GetByID(ctx, prID)
+	pr, err := s.Repo.GetByID(ctx, prID)
 	if err != nil {
 		return nil, err
 	}
 
 	if pr.Status != models.PRStatus("MERGED") {
-		if err := s.repo.MarkMerged(ctx, prID); err != nil {
+		if err := s.Repo.MarkMerged(ctx, prID); err != nil {
 			return nil, err
 		}
 		pr.Status = models.PRStatus("MERGED")
 	}
 
-	reviewers, err := s.repo.GetReviewers(ctx, prID)
+	reviewers, err := s.Repo.GetReviewers(ctx, prID)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *PullRequestService) MergePullRequest(ctx context.Context, prID string) 
 }
 
 func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUserID string) (*PullRequestDTO, string, error) {
-	pr, err := s.repo.GetByID(ctx, prID)
+	pr, err := s.Repo.GetByID(ctx, prID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -115,12 +115,12 @@ func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUser
 		return nil, "", apierr.ErrPRAlreadyMerged
 	}
 
-	oldUser, err := s.repo.GetUserByID(ctx, oldUserID)
+	oldUser, err := s.Repo.GetUserByID(ctx, oldUserID)
 	if err != nil {
 		return nil, "", err
 	}
 
-	reviewers, err := s.repo.GetReviewers(ctx, prID)
+	reviewers, err := s.Repo.GetReviewers(ctx, prID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -136,7 +136,7 @@ func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUser
 		return nil, "", apierr.ErrReviewerNotAssigned
 	}
 
-	members, err := s.repo.GetActiveTeamMembers(ctx, oldUser.TeamName)
+	members, err := s.Repo.GetActiveTeamMembers(ctx, oldUser.TeamName)
 	if err != nil {
 		return nil, "", err
 	}
@@ -164,11 +164,11 @@ func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUser
 	idx := rand.Intn(len(candidates))
 	newReviewerID := candidates[idx]
 
-	if err := s.repo.ReplaceReviewer(ctx, prID, oldUserID, newReviewerID); err != nil {
+	if err := s.Repo.ReplaceReviewer(ctx, prID, oldUserID, newReviewerID); err != nil {
 		return nil, "", err
 	}
 
-	updatedReviewers, err := s.repo.GetReviewers(ctx, prID)
+	updatedReviewers, err := s.Repo.GetReviewers(ctx, prID)
 	if err != nil {
 		return nil, "", err
 	}

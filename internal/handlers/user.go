@@ -11,8 +11,8 @@ import (
 )
 
 type UserHandler struct {
-	service *service.UserService
-	logger logging.Logger
+	Service *service.UserService
+	Logger logging.Logger
 }
 
 func (h *UserHandler) SetUserIsActive(c echo.Context) error {
@@ -26,24 +26,24 @@ func (h *UserHandler) SetUserIsActive(c echo.Context) error {
 
     var req setUserIsActiveRequest
     if err := c.Bind(&req); err != nil {
-        h.logger.Warnf("failed to bind request: %v", err)
+        h.Logger.Warnf("failed to bind request: %v", err)
         return c.JSON(http.StatusBadRequest,
             apierr.NewAPIError("BAD_REQUEST", "invalid payload"))
     }
 
     if req.UserID == "" {
-        h.logger.Warnf("user_id is required")
+        h.Logger.Warnf("user_id is required")
         return c.JSON(http.StatusBadRequest,
             apierr.NewAPIError("BAD_REQUEST", "user_id is required"))
     }
 
-    user, err := h.service.SetIsActive(ctx, req.UserID, req.IsActive)
+    user, err := h.Service.SetIsActive(ctx, req.UserID, req.IsActive)
     if err != nil {
         if errors.Is(err, apierr.ErrUserNotFound){
-            h.logger.Warnf("user not found: %s", req.UserID)
+            h.Logger.Warnf("user not found: %s", req.UserID)
             return c.JSON(http.StatusNotFound, apierr.NewAPIError("NOT_FOUND", "user not found"))
 		}
-        h.logger.Errorf("internal server error: %v", err)
+        h.Logger.Errorf("internal server error: %v", err)
         return c.JSON(http.StatusInternalServerError, apierr.NewAPIError("INTERNAL", "internal error"))
     }
 
@@ -55,18 +55,18 @@ func (h *UserHandler) GetUserReviews(c echo.Context) error {
 
     userID := c.QueryParam("user_id")
     if userID == "" {
-        h.logger.Warnf("user_id is required")
+        h.Logger.Warnf("user_id is required")
         return c.JSON(http.StatusBadRequest,
             apierr.NewAPIError("BAD_REQUEST", "user_id is required"))
     }
 
-    resp, err := h.service.GetReview(ctx, userID)
+    resp, err := h.Service.GetReview(ctx, userID)
     if err != nil {
         if errors.Is(err, apierr.ErrUserNotFound) {
-            h.logger.Warnf("user not found: %s", userID)
+            h.Logger.Warnf("user not found: %s", userID)
             return c.JSON(http.StatusNotFound, apierr.NewAPIError("NOT_FOUND", "user not found"))
         }
-        h.logger.Errorf("internal server error: %v", err)
+        h.Logger.Errorf("internal server error: %v", err)
         return c.JSON(http.StatusInternalServerError, apierr.NewAPIError("INTERNAL", "internal error"))
     }
 

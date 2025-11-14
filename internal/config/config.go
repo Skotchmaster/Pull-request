@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	JWTSecret []byte
-	DBDSN     string
+	DBURL     string
 	Port      string
 }
 
@@ -27,7 +27,7 @@ func Load(logger logging.Logger) (*Config, error) {
 		return nil, err
 	}
 
-	dsn, err := mustEnv("DB_DSN")
+	dsn, err := mustEnv("DB_URL")
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func Load(logger logging.Logger) (*Config, error) {
 
 	return &Config{
 		JWTSecret: []byte(jwt),
-		DBDSN:     dsn,
+		DBURL:     dsn,
 		Port:      port,
 	}, nil
 }

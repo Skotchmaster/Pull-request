@@ -11,16 +11,12 @@ import (
 )
 
 type PullRequestRepo struct {
-	db *gorm.DB
-}
-
-func NewPullRequestRepo(db *gorm.DB) *PullRequestRepo {
-	return &PullRequestRepo{db: db}
+	DB *gorm.DB
 }
 
 func (r *PullRequestRepo) GetByID(ctx context.Context, prID string) (*models.PullRequest, error) {
 	var pr models.PullRequest
-	if err := r.db.WithContext(ctx).
+	if err := r.DB.WithContext(ctx).
 		Where("pr_id = ?", prID).
 		First(&pr).Error; err != nil {
 
@@ -34,7 +30,7 @@ func (r *PullRequestRepo) GetByID(ctx context.Context, prID string) (*models.Pul
 
 func (r *PullRequestRepo) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
 	var user models.User
-	if err := r.db.WithContext(ctx).
+	if err := r.DB.WithContext(ctx).
 		Where("user_id = ?", userID).
 		First(&user).Error; err != nil {
 
@@ -48,7 +44,7 @@ func (r *PullRequestRepo) GetUserByID(ctx context.Context, userID string) (*mode
 
 func (r *PullRequestRepo) GetActiveTeamMembers(ctx context.Context, teamName string) ([]models.User, error) {
 	var users []models.User
-	if err := r.db.WithContext(ctx).
+	if err := r.DB.WithContext(ctx).
 		Where("team_name = ? AND is_active = TRUE", teamName).
 		Order("user_id ASC").
 		Find(&users).Error; err != nil {
@@ -59,7 +55,7 @@ func (r *PullRequestRepo) GetActiveTeamMembers(ctx context.Context, teamName str
 }
 
 func (r *PullRequestRepo) CreateWithReviewers(ctx context.Context, pr *models.PullRequest, reviewerIDs []string) error {
-    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+    return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
         if err := tx.Create(pr).Error; err != nil {
             return err
         }
@@ -88,7 +84,7 @@ func (r *PullRequestRepo) CreateWithReviewers(ctx context.Context, pr *models.Pu
 func (r *PullRequestRepo) GetReviewers(ctx context.Context, prID string) ([]string, error) {
 	var reviewerIDs []string
 
-	if err := r.db.WithContext(ctx).
+	if err := r.DB.WithContext(ctx).
 		Table("pr_reviewers").
 		Where("pr_id = ?", prID).
 		Order("user_id ASC").
@@ -101,7 +97,7 @@ func (r *PullRequestRepo) GetReviewers(ctx context.Context, prID string) ([]stri
 }
 
 func (r *PullRequestRepo) MarkMerged(ctx context.Context, prID string) error {
-	return r.db.WithContext(ctx).
+	return r.DB.WithContext(ctx).
 		Model(&models.PullRequest{}).
 		Where("pr_id = ?", prID).
 		Updates(map[string]any{
@@ -111,7 +107,7 @@ func (r *PullRequestRepo) MarkMerged(ctx context.Context, prID string) error {
 }
 
 func (r *PullRequestRepo) ReplaceReviewer(ctx context.Context, prID, oldUserID, newUserID string) error {
-    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+    return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
         if err := tx.
             Where("pr_id = ? AND user_id = ?", prID, oldUserID).
             Delete(&models.PRReviewer{}).Error; err != nil {

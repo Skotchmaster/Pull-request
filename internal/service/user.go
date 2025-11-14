@@ -11,7 +11,7 @@ type UserRepository interface {
 }
 
 type UserService struct {
-	repo UserRepository
+	Repo UserRepository
 }
 
 type PullRequestShort struct {
@@ -27,7 +27,7 @@ type PullRequestResponse struct {
 }
 
 func (s *UserService) SetIsActive(ctx context.Context, user_id string, is_active bool) (*models.User, error) {
-	user, err := s.repo.SetIsActive(ctx, user_id, is_active)
+	user, err := s.Repo.SetIsActive(ctx, user_id, is_active)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (s *UserService) SetIsActive(ctx context.Context, user_id string, is_active
 
 func (s *UserService) GetReview(ctx context.Context, userID string) (*PullRequestResponse, error) {
 
-	prs, err := s.repo.GetReview(ctx, userID)
+	prs, err := s.Repo.GetReview(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
