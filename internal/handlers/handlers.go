@@ -1,7 +1,7 @@
 package handlers
 
 type Handlers struct{
-	PRHandler PRHandler
+	PRHandler PullRequestHandler
 	TeamHandler TeamHandler
 	UserHandler UserHandler
 }
