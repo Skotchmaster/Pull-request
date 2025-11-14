@@ -12,6 +12,10 @@ var (
 	ErrPRNotFound           = errors.New("pr not found")
 	ErrPRAlreadyMerged      = errors.New("pr already merged")
 	ErrNoReviewersAvailable = errors.New("no reviewers available")
+
+	ErrPRExists            = errors.New("pr already exists")
+	ErrReviewerNotAssigned = errors.New("reviewer is not assigned to this PR")
+	ErrNoCandidate         = errors.New("no active replacement candidate in team")
 )
 
 type APIError struct {
