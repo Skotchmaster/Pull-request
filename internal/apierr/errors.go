@@ -1,5 +1,19 @@
 package apierr
 
+import "errors"
+
+var (
+	ErrTeamExists   = errors.New("team already exists")
+	ErrTeamNotFound = errors.New("team not found")
+
+	ErrUserExists   = errors.New("user already exists")
+	ErrUserNotFound = errors.New("user not found")
+
+	ErrPRNotFound           = errors.New("pr not found")
+	ErrPRAlreadyMerged      = errors.New("pr already merged")
+	ErrNoReviewersAvailable = errors.New("no reviewers available")
+)
+
 type APIError struct {
 	Error APIErrorBody `json:"error"`
 }
@@ -9,29 +23,11 @@ type APIErrorBody struct {
 	Message string `json:"message"`
 }
 
-func NewAPIError(code, msg string) APIError {
+func NewAPIError(code, message string) APIError {
 	return APIError{
 		Error: APIErrorBody{
 			Code:    code,
-			Message: msg,
+			Message: message,
 		},
 	}
 }
-
-const (
-	ErrCodeTeamExists   = "TEAM_EXISTS"
-	ErrCodePRExists     = "PR_EXISTS"
-	ErrCodePRMerged     = "PR_MERGED"
-	ErrCodeNotAssigned  = "NOT_ASSIGNED"
-	ErrCodeNoCandidate  = "NO_CANDIDATE"
-	ErrCodeNotFound     = "NOT_FOUND"
-
-	ErrCodeUnauthorized = "UNAUTHORIZED"
-	ErrCodeForbidden    = "FORBIDDEN"
-)
-
-const (
-	ErrMsgUnauthorized       = "missing or invalid token"
-	ErrMsgAdminRequired      = "admin role required"
-	ErrMsgResourceNotFound   = "resource not found"
-)
