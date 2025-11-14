@@ -43,8 +43,8 @@ components:
                 - NOT_ASSIGNED
                 - NO_CANDIDATE
                 - NOT_FOUND
-                - UNAUTHORIZED
-                - FORBIDDEN
+                - BAD_REQUEST
+                - INTERNAL
             message:
               type: string
       example:
@@ -172,14 +172,20 @@ paths:
                 error:
                   code: TEAM_EXISTS
                   message: team_name already exists
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
 
   /team/get:
     get:
       tags: [Teams]
       summary: Получить команду с участниками
-      security:
-        - AdminToken: []
-        - UserToken: []
       parameters:
         - $ref: '#/components/parameters/TeamNameQuery'
       responses:
@@ -198,18 +204,38 @@ paths:
                   - user_id: u2
                     username: Bob
                     is_active: true
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: team_name is required
         '404':
           description: Команда не найдена
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: team not found
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
 
   /users/setIsActive:
     post:
       tags: [Users]
       summary: Установить флаг активности пользователя
-      security:
-        - AdminToken: []
       requestBody:
         required: true
         content:
@@ -241,23 +267,38 @@ paths:
                   username: Bob
                   team_name: backend
                   is_active: false
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: invalid payload
         '404':
           description: Пользователь не найден
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
-        '401':
-          description: Нет/неверный админский токен
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: user not found
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
 
   /pullRequest/create:
     post:
       tags: [PullRequests]
       summary: Создать PR и автоматически назначить до 2 ревьюверов из команды автора
-      security:
-        - AdminToken: []
       requestBody:
         required: true
         content:
@@ -290,11 +331,24 @@ paths:
                   author_id: u1
                   status: OPEN
                   assigned_reviewers: [u2, u3]
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: invalid payload
         '404':
           description: Автор/команда не найдены
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: author or team not found
         '409':
           description: PR уже существует
           content:
@@ -302,13 +356,20 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
               example:
                 error: { code: PR_EXISTS, message: PR id already exists }
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
 
   /pullRequest/merge:
     post:
       tags: [PullRequests]
       summary: Пометить PR как MERGED (идемпотентная операция)
-      security:
-        - AdminToken: []
       requestBody:
         required: true
         content:
@@ -338,18 +399,38 @@ paths:
                   status: MERGED
                   assigned_reviewers: [u2, u3]
                   mergedAt: 2025-10-24T12:34:56Z
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: pull_request_id is required
         '404':
           description: PR не найден
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: pull request not found
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
 
   /pullRequest/reassign:
     post:
       tags: [PullRequests]
       summary: Переназначить конкретного ревьювера на другого из его команды
-      security:
-        - AdminToken: []
       requestBody:
         required: true
         content:
@@ -385,6 +466,15 @@ paths:
                   status: OPEN
                   assigned_reviewers: [u3, u5]
                 replaced_by: u5
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: invalid payload
         '404':
           description: PR или пользователь не найден
           content:
@@ -408,14 +498,20 @@ paths:
                   summary: Нет доступных кандидатов
                   value:
                     error: { code: NO_CANDIDATE, message: no active replacement candidate in team }
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
 
   /users/getReview:
     get:
       tags: [Users]
       summary: Получить PR'ы, где пользователь назначен ревьювером
-      security:
-        - AdminToken: []
-        - UserToken: []
       parameters:
         - $ref: '#/components/parameters/UserIdQuery'
       responses:
@@ -440,3 +536,30 @@ paths:
                     pull_request_name: Add search
                     author_id: u1
                     status: OPEN
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BAD_REQUEST
+                  message: user_id is required
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: NOT_FOUND
+                  message: user not found
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: INTERNAL
+                  message: internal error
