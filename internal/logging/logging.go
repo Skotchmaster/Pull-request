@@ -4,6 +4,7 @@ import "log"
 
 type Logger interface {
 	Infof(format string, args ...any)
+	Warnf(format string, args ...any)
 	Errorf(format string, args ...any)
 }
 
@@ -15,6 +16,10 @@ func NewStdLogger() Logger {
 
 func (l *stdLogger) Infof(format string, args ...any) {
 	log.Printf("[INFO] "+format, args...)
+}
+
+func (l *stdLogger) Warnf(format string, args ...any) {
+	log.Printf("[WARNING] "+format, args...)
 }
 
 func (l *stdLogger) Errorf(format string, args ...any) {
