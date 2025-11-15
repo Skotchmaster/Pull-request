@@ -47,7 +47,11 @@ func main() {
 		logger.Errorf("failed to get sql.DB: %v", err)
 		os.Exit(1)
 	}
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			logger.Errorf("failed to close db: %v", err)
+		}
+	}()
 
 	prRepo := &repo.PullRequestRepo{DB: gdb}
 	teamRepo := &repo.TeamRepo{DB: gdb}
@@ -70,9 +74,8 @@ func main() {
 	e := echo.New()
 
 	httproutes.Register(e, &httproutes.Deps{
-		JWTSecret: cfg.JWTSecret,
 		Handlers:  allHandlers,
-	}, logger)
+	})
 
 	serverErr := make(chan error, 1)
 
