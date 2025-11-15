@@ -60,15 +60,18 @@ func main() {
 	prService := &service.PullRequestService{Repo: prRepo}
 	teamService := &service.TeamService{Repo: teamRepo}
 	userService := &service.UserService{Repo: userRepo}
+	statsService := &service.StatsService{Repo: prRepo}
 
 	prHandler := handlers.PullRequestHandler{Service: prService, Logger: logger}
 	teamHandler := handlers.TeamHandler{Service: teamService, Logger: logger}
 	userHandler := handlers.UserHandler{Service: userService, Logger: logger}
+	statsHandler := handlers.StatsHandler{Service: statsService, Logger: logger}
 
 	allHandlers := handlers.Handlers{
 		PRHandler:   prHandler,
 		TeamHandler: teamHandler,
 		UserHandler: userHandler,
+		StatsHandler: statsHandler,
 	}
 
 	e := echo.New()

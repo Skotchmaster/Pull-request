@@ -68,6 +68,12 @@ PORT=8080
 docker-compose up --build
 ```
 
+или через Makefile:
+
+```bash
+make up
+```
+
 После запуска:
 
 - HTTP API: `http://localhost:8080`
@@ -80,8 +86,8 @@ docker-compose up --build
 
 ## Локальный запуск без Docker
 
-1. Поднять PostgreSQL локально.
-2. Применить миграции из `db/migrations/001_init.sql`.
+1. Поднять PostgreSQL локально.  
+2. Применить миграции из `db/migrations/001_init.sql`.  
 3. Экспортировать переменные окружения:
 
 ```bash
@@ -92,12 +98,62 @@ export PORT=8080
 4. Запустить сервис:
 
 ```bash
-go run ./cmd/server 
+go run ./cmd/server
 ```
-Или через Makefile
-```bush
+
+или через Makefile:
+
+```bash
 make run
 ```
+
+---
+
+## Makefile
+
+В корне проекта есть `Makefile` с основными командами для разработки и запуска:
+
+```makefile
+BINARY_NAME = pr-service
+
+.PHONY: build run test tidy up down logs
+
+build:
+	go build -o bin/$(BINARY_NAME) ./cmd/server
+
+run:
+	go run ./cmd/server
+
+test:
+	go test ./...
+
+tidy:
+	go mod tidy
+
+lint:
+	golangci-lint run ./...
+
+up:
+	docker-compose up --build
+
+down:
+	docker-compose down -v
+
+logs:
+	docker-compose logs -f
+```
+
+Полезные команды:
+
+- `make build` – собрать бинарник `bin/pr-service`.  
+- `make run` – запустить сервис локально без Docker.  
+- `make test` – прогнать все тесты `go test ./...`.  
+- `make tidy` – привести зависимости в порядок (`go mod tidy`).  
+- `make lint` – запустить линтер `golangci-lint run ./...`.  
+- `make up` – поднять Postgres и сервис через `docker-compose up --build`.  
+- `make down` – остановить и удалить контейнеры и volume’ы (`docker-compose down -v`).  
+- `make logs` – посмотреть логи `docker-compose logs -f`.
+
 ---
 
 ## API и контракт
@@ -114,6 +170,7 @@ make run
 - `POST /pullRequest/create` – создать PR и автоматически назначить до двух ревьюверов.
 - `POST /pullRequest/merge` – пометить PR как `MERGED` (идемпотентно).
 - `POST /pullRequest/reassign` – переназначить ревьювера на случайного активного участника его команды.
+- `GET /stats/reviewers` – простая статистика: сколько раз каждый пользователь был назначен ревьювером (на основе таблицы `pr_reviewers`).
 
 Формат ошибок:
 
@@ -137,18 +194,32 @@ make run
 
 Основные включённые линтеры:
 
-- `govet` — встроенный анализатор Go, ищет подозрительные конструкции
-- `staticcheck` — расширенный статический анализ кода
-- `unused` — поиск неиспользуемого кода
-- `errcheck` — проверка, что ошибки не игнорируются
+- `govet` — встроенный анализатор Go, ищет подозрительные конструкции;  
+- `staticcheck` — расширенный статический анализ кода;  
+- `unused` — поиск неиспользуемого кода;  
+- `errcheck` — проверка, что ошибки не игнорируются.
 
-### Установка
+### Установка и запуск
 
-Локально golangci-lint можно установить так:
+Установка:
 
 ```bash
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
+
+Запуск:
+
+```bash
+make lint
+```
+
+или:
+
+```bash
+golangci-lint run ./...
+```
+
+---
 
 ## Обработка ошибок и принятые решения
 
@@ -196,8 +267,8 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 Возможные варианты:
 
-1. Всегда возвращать `200` с пустым списком, независимо от существования пользователя.
-2. Возвращать `404`, если пользователь не найден.
+1. Всегда возвращать `200` с пустым списком, независимо от существования пользователя.  
+2. Возвращать `404`, если пользователь не найден.  
 3. Возвращать `400` и считать это ошибкой клиента.
 
 Выбран вариант №2 — возвращать `404 NOT_FOUND`, потому что:
@@ -217,3 +288,14 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   - возвращается `200 OK` с пустым массивом `pull_requests`.
 
 ---
+
+### 3. Дополнительный эндпоинт статистики
+
+В рамках дополнительных заданий был реализован простой статистический эндпоинт:
+
+- `GET /stats/reviewers` — возвращает количество назначений на ревью по каждому пользователю.
+
+Решение:
+
+- статистика считается на лету на основе таблицы `pr_reviewers`;
+- используется агрегирующий запрос `GROUP BY user_id`, без отдельной таблицы для статистики;

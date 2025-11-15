@@ -15,9 +15,13 @@ func Register(e *echo.Echo, d *Deps) {
 
 	e.POST("/team/add", d.Handlers.TeamHandler.CreateTeam)
 	e.GET("/team/get", d.Handlers.TeamHandler.GetTeam)
+
 	e.GET("/users/getReview", d.Handlers.UserHandler.GetUserReviews)
 	e.POST("/users/setIsActive", d.Handlers.UserHandler.SetUserIsActive)
+
 	e.POST("/pullRequest/create", d.Handlers.PRHandler.CreatePullRequest)
 	e.POST("/pullRequest/merge", d.Handlers.PRHandler.MergePullRequest)
 	e.POST("/pullRequest/reassign", d.Handlers.PRHandler.ReassignReviewer)
+
+	e.GET("/stats/reviewers", d.Handlers.StatsHandler.GetReviewerStats)
 }
