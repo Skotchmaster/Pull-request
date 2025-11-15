@@ -21,16 +21,16 @@ type TeamRepository interface {
 }
 
 type TeamService struct {
-	repo TeamRepository
+	Repo TeamRepository
 }
 
 func (s *TeamService) CreateTeam(ctx context.Context, t Team) (Team, error) {
-	if err := s.repo.CreateTeam(ctx, t); err != nil {
+	if err := s.Repo.CreateTeam(ctx, t); err != nil {
 		return Team{}, err
 	}
-	return s.repo.GetTeam(ctx, t.TeamName)
+	return s.Repo.GetTeam(ctx, t.TeamName)
 }
 
 func (s *TeamService) GetTeam(ctx context.Context, name string) (Team, error) {
-	return s.repo.GetTeam(ctx, name)
+	return s.Repo.GetTeam(ctx, name)
 }

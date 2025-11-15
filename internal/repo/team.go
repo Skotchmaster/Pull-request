@@ -11,11 +11,11 @@ import (
 )
 
 type TeamRepo struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func (r *TeamRepo) CreateTeam(ctx context.Context, t service.Team) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var count int64
 		if err := tx.Model(&models.Team{}).
 			Where("team_name = ?", t.TeamName).
@@ -52,7 +52,7 @@ func (r *TeamRepo) CreateTeam(ctx context.Context, t service.Team) error {
 func (r *TeamRepo) GetTeam(ctx context.Context, name string) (service.Team, error) {
 
 	var t models.Team
-	if err := r.db.WithContext(ctx).Where("team_name = ?", name).First(&t).Error; err != nil {
+	if err := r.DB.WithContext(ctx).Where("team_name = ?", name).First(&t).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return service.Team{}, apierr.ErrTeamNotFound
 		}
@@ -60,7 +60,7 @@ func (r *TeamRepo) GetTeam(ctx context.Context, name string) (service.Team, erro
 	}
 
 	var users []models.User
-	if err := r.db.WithContext(ctx).Where("team_name = ?", name).Find(&users).Error; err != nil {
+	if err := r.DB.WithContext(ctx).Where("team_name = ?", name).Find(&users).Error; err != nil {
 		return service.Team{}, err
 	}
 
