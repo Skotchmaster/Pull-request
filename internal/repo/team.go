@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"pull_request/internal/models"
-	"pull_request/internal/service"
 	"pull_request/internal/apierr"
 
 	"gorm.io/gorm"
@@ -14,10 +13,10 @@ type TeamRepo struct {
 	DB *gorm.DB
 }
 
-func (r *TeamRepo) CreateTeam(ctx context.Context, t service.Team) error {
+func (r *TeamRepo) CreateTeam(ctx context.Context, t models.TeamResp) error {
 	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var count int64
-		if err := tx.Model(&models.Team{}).
+		if err := tx.Model(&models.TeamResp{}).
 			Where("team_name = ?", t.TeamName).
 			Count(&count).Error; err != nil {
 			return err
@@ -26,7 +25,7 @@ func (r *TeamRepo) CreateTeam(ctx context.Context, t service.Team) error {
 			return apierr.ErrTeamExists
 		}
 
-		if err := tx.Create(&models.Team{
+		if err := tx.Create(&models.TeamResp{
 			TeamName: t.TeamName,
 		}).Error; err != nil {
 			return err
@@ -49,31 +48,31 @@ func (r *TeamRepo) CreateTeam(ctx context.Context, t service.Team) error {
 	})
 }
 
-func (r *TeamRepo) GetTeam(ctx context.Context, name string) (service.Team, error) {
+func (r *TeamRepo) GetTeam(ctx context.Context, name string) (models.TeamResp, error) {
 
-	var t models.Team
+	var t models.TeamResp
 	if err := r.DB.WithContext(ctx).Where("team_name = ?", name).First(&t).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return service.Team{}, apierr.ErrTeamNotFound
+			return models.TeamResp{}, apierr.ErrTeamNotFound
 		}
-		return service.Team{}, err
+		return models.TeamResp{}, err
 	}
 
 	var users []models.User
 	if err := r.DB.WithContext(ctx).Where("team_name = ?", name).Find(&users).Error; err != nil {
-		return service.Team{}, err
+		return models.TeamResp{}, err
 	}
 
-	members := make([]service.TeamMember, 0, len(users))
+	members := make([]models.TeamMember, 0, len(users))
 	for _, u := range users {
-		members = append(members, service.TeamMember{
+		members = append(members, models.TeamMember{
 			UserID:   u.UserID,
 			Username: u.Username,
 			IsActive: u.IsActive,
 		})
 	}
 
-	return service.Team{
+	return models.TeamResp{
 		TeamName: t.TeamName,
 		Members:  members,
 	}, nil

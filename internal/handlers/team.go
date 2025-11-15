@@ -7,6 +7,7 @@ import (
 	"pull_request/internal/apierr"
 	"pull_request/internal/logging"
 	"pull_request/internal/service"
+	"pull_request/internal/models"
 
 	"github.com/labstack/echo/v4"
 )
@@ -17,7 +18,7 @@ type TeamHandler struct {
 }
 
 func (h *TeamHandler) CreateTeam(c echo.Context) error {
-	var req service.Team
+	var req models.TeamResp
 
 	if err := c.Bind(&req); err != nil {
 		h.Logger.Warnf("failed to bind /team/add request: %v", err)

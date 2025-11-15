@@ -57,10 +57,8 @@ DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=pull_request
 
-# ВАЖНО: приложение использует DB_URL
 DB_URL=postgres://postgres:postgres@db:5432/pull_request?sslmode=disable
 
-JWT_SECRET=some-secret
 PORT=8080
 ```
 
@@ -73,7 +71,7 @@ docker-compose up --build
 После запуска:
 
 - HTTP API: `http://localhost:8080`
-- Liveness-эндпоинт: `GET /health/live` (если включён)
+- Liveness-эндпоинт: `GET /health/live`
 
 Миграции применяются автоматически при старте контейнера Postgres  
 (через `./db/migrations` и `docker-entrypoint-initdb.d`).
@@ -83,21 +81,23 @@ docker-compose up --build
 ## Локальный запуск без Docker
 
 1. Поднять PostgreSQL локально.
-2. Применить миграции из `db/migrations/001_init.sql` (например, через `psql`).
+2. Применить миграции из `db/migrations/001_init.sql`.
 3. Экспортировать переменные окружения:
 
 ```bash
 export DB_URL=postgres://user:pass@localhost:5432/db_name?sslmode=disable
-export JWT_SECRET=some-secret
 export PORT=8080
 ```
 
 4. Запустить сервис:
 
 ```bash
-go run ./cmd/server
+go run ./cmd/server 
 ```
-
+Или через Makefile
+```bush
+make run
+```
 ---
 
 ## API и контракт

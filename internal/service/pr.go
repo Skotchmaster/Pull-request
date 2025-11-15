@@ -24,16 +24,8 @@ type PullRequestService struct {
 	Repo PullRequestRepository
 }
 
-type PullRequestDTO struct {
-	PullRequestID     string          `json:"pull_request_id"`
-	PullRequestName   string          `json:"pull_request_name"`
-	AuthorID          string          `json:"author_id"`
-	Status            models.PRStatus `json:"status"`
-	AssignedReviewers []string        `json:"assigned_reviewers"`
-}
-
-func toPullRequestDTO(pr *models.PullRequest, reviewers []string) *PullRequestDTO {
-	return &PullRequestDTO{
+func toPullRequestDTO(pr *models.PullRequest, reviewers []string) *models.PullRequestDTO {
+	return &models.PullRequestDTO{
 		PullRequestID:     pr.PullRequestID,
 		PullRequestName:   pr.PullRequestName,
 		AuthorID:          pr.AuthorID,
@@ -42,7 +34,7 @@ func toPullRequestDTO(pr *models.PullRequest, reviewers []string) *PullRequestDT
 	}
 }
 
-func (s *PullRequestService) CreatePullRequest(ctx context.Context, prID, prName, authorID string) (*PullRequestDTO, error) {
+func (s *PullRequestService) CreatePullRequest(ctx context.Context, prID, prName, authorID string) (*models.PullRequestDTO, error) {
 	if _, err := s.Repo.GetByID(ctx, prID); err == nil {
 		return nil, apierr.ErrPRExists
 	} else if !errors.Is(err, apierr.ErrPRNotFound) {
@@ -84,7 +76,7 @@ func (s *PullRequestService) CreatePullRequest(ctx context.Context, prID, prName
 	return toPullRequestDTO(pr, reviewerIDs), nil
 }
 
-func (s *PullRequestService) MergePullRequest(ctx context.Context, prID string) (*PullRequestDTO, error) {
+func (s *PullRequestService) MergePullRequest(ctx context.Context, prID string) (*models.PullRequestDTO, error) {
 	pr, err := s.Repo.GetByID(ctx, prID)
 	if err != nil {
 		return nil, err
@@ -105,7 +97,7 @@ func (s *PullRequestService) MergePullRequest(ctx context.Context, prID string) 
 	return toPullRequestDTO(pr, reviewers), nil
 }
 
-func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUserID string) (*PullRequestDTO, string, error) {
+func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUserID string) (*models.PullRequestDTO, string, error) {
 	pr, err := s.Repo.GetByID(ctx, prID)
 	if err != nil {
 		return nil, "", err
