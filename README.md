@@ -10,7 +10,7 @@
 ```text
 cmd/server/main.go        – точка входа, конфиг, запуск сервера, graceful shutdown
 
-internal/config           – загрузка конфигурации из env (DB_URL, PORT, JWT_SECRET)
+internal/config           – загрузка конфигурации из env 
 internal/db               – инициализация подключения к БД (GORM)
 internal/logging          – интерфейс и реализация логгера
 internal/http/route.go    – регистрация HTTP-роутов в Echo

@@ -5,8 +5,6 @@ import (
 	"pull_request/internal/models"
 )
 
-
-
 type TeamRepository interface {
 	CreateTeam(ctx context.Context, t models.TeamResp) error
 	GetTeam(ctx context.Context, name string) (models.TeamResp, error)

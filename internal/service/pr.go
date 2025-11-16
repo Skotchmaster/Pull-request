@@ -152,7 +152,6 @@ func (s *PullRequestService) ReassignReviewer(ctx context.Context, prID, oldUser
 		return nil, "", apierr.ErrNoCandidate
 	}
 
-	
 	idx := rand.Intn(len(candidates))
 	newReviewerID := candidates[idx]
 

@@ -3,8 +3,8 @@ package repo
 import (
 	"context"
 
-	"pull_request/internal/models"
 	"pull_request/internal/apierr"
+	"pull_request/internal/models"
 
 	"gorm.io/gorm"
 )

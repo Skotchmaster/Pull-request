@@ -10,8 +10,8 @@ import (
 )
 
 type StatsHandler struct {
-	Service  *service.StatsService
-	Logger logging.Logger
+	Service *service.StatsService
+	Logger  logging.Logger
 }
 
 func (h *StatsHandler) GetReviewerStats(c echo.Context) error {
@@ -19,7 +19,7 @@ func (h *StatsHandler) GetReviewerStats(c echo.Context) error {
 
 	stats, err := h.Service.GetReviewerStats(ctx)
 	if err != nil {
-		h.Logger.Errorf("failed to get reviewer stats", "error", err)
+		h.Logger.Errorf("failed to get reviewer stats: %v", err)
 		return c.JSON(http.StatusInternalServerError,
 			apierr.NewAPIError("INTERNAL", "internal error"))
 	}

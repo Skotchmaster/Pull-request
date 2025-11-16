@@ -68,16 +68,16 @@ func main() {
 	statsHandler := handlers.StatsHandler{Service: statsService, Logger: logger}
 
 	allHandlers := handlers.Handlers{
-		PRHandler:   prHandler,
-		TeamHandler: teamHandler,
-		UserHandler: userHandler,
+		PRHandler:    prHandler,
+		TeamHandler:  teamHandler,
+		UserHandler:  userHandler,
 		StatsHandler: statsHandler,
 	}
 
 	e := echo.New()
 
 	httproutes.Register(e, &httproutes.Deps{
-		Handlers:  allHandlers,
+		Handlers: allHandlers,
 	})
 
 	serverErr := make(chan error, 1)

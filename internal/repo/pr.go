@@ -55,31 +55,30 @@ func (r *PullRequestRepo) GetActiveTeamMembers(ctx context.Context, teamName str
 }
 
 func (r *PullRequestRepo) CreateWithReviewers(ctx context.Context, pr *models.PullRequest, reviewerIDs []string) error {
-    return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-        if err := tx.Create(pr).Error; err != nil {
-            return err
-        }
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(pr).Error; err != nil {
+			return err
+		}
 
-        if len(reviewerIDs) == 0 {
-            return nil
-        }
+		if len(reviewerIDs) == 0 {
+			return nil
+		}
 
-        reviewers := make([]models.PRReviewer, 0, len(reviewerIDs))
-        for _, id := range reviewerIDs {
-            reviewers = append(reviewers, models.PRReviewer{
-                PullRequestID: pr.PullRequestID,
-                UserID:        id,
-            })
-        }
+		reviewers := make([]models.PRReviewer, 0, len(reviewerIDs))
+		for _, id := range reviewerIDs {
+			reviewers = append(reviewers, models.PRReviewer{
+				PullRequestID: pr.PullRequestID,
+				UserID:        id,
+			})
+		}
 
-        if err := tx.Create(&reviewers).Error; err != nil {
-            return err
-        }
+		if err := tx.Create(&reviewers).Error; err != nil {
+			return err
+		}
 
-        return nil
-    })
+		return nil
+	})
 }
-
 
 func (r *PullRequestRepo) GetReviewers(ctx context.Context, prID string) ([]string, error) {
 	var reviewerIDs []string
@@ -107,22 +106,22 @@ func (r *PullRequestRepo) MarkMerged(ctx context.Context, prID string) error {
 }
 
 func (r *PullRequestRepo) ReplaceReviewer(ctx context.Context, prID, oldUserID, newUserID string) error {
-    return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-        if err := tx.
-            Where("pr_id = ? AND user_id = ?", prID, oldUserID).
-            Delete(&models.PRReviewer{}).Error; err != nil {
-            return err
-        }
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.
+			Where("pr_id = ? AND user_id = ?", prID, oldUserID).
+			Delete(&models.PRReviewer{}).Error; err != nil {
+			return err
+		}
 
-        newReviewer := models.PRReviewer{
-            PullRequestID: prID,
-            UserID:        newUserID,
-        }
+		newReviewer := models.PRReviewer{
+			PullRequestID: prID,
+			UserID:        newUserID,
+		}
 
-        if err := tx.Create(&newReviewer).Error; err != nil {
-            return err
-        }
+		if err := tx.Create(&newReviewer).Error; err != nil {
+			return err
+		}
 
-        return nil
-    })
+		return nil
+	})
 }

@@ -35,7 +35,6 @@ func newTestEnv(t *testing.T) *testEnv {
 	}
 }
 
-
 func (env *testEnv) doJSON(method, path string, reqBody any) (*http.Response, []byte) {
 	env.t.Helper()
 

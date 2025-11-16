@@ -6,8 +6,8 @@ import (
 
 	"pull_request/internal/apierr"
 	"pull_request/internal/logging"
-	"pull_request/internal/service"
 	"pull_request/internal/models"
+	"pull_request/internal/service"
 
 	"github.com/labstack/echo/v4"
 )
