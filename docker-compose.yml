@@ -16,6 +16,7 @@ services:
       - ./db/migrations:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
+    profiles: ["dev"]
 
   app:
     build: .
@@ -23,8 +24,48 @@ services:
       db:
         condition: service_healthy
     env_file: [.env]
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
     ports:
       - "8080:8080"
+    profiles: ["dev"]
+
+  db-test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${TEST_DB_USER}
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
+      POSTGRES_DB: ${TEST_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    volumes:
+      - pg_data_test:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5433:5432"
+    profiles: ["test"]
+
+  app-test:
+    build: .
+    depends_on:
+      db-test:
+        condition: service_healthy
+    env_file: [.env]
+    environment:
+      DB_USER: ${TEST_DB_USER}
+      DB_PASSWORD: ${TEST_DB_PASSWORD}
+      DB_NAME: ${TEST_DB_NAME}
+      DB_HOST: ${TEST_DB_HOST}
+      DB_PORT: 5432
+    ports:
+      - "8081:8080"
+    profiles: ["test"]
 
 volumes:
   pg_data:
+  pg_data_test:
