@@ -16,7 +16,7 @@ type TeamRepo struct {
 func (r *TeamRepo) CreateTeam(ctx context.Context, t models.TeamResp) error {
 	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var count int64
-		if err := tx.Model(&models.TeamResp{}).
+		if err := tx.Model(&models.Team{}).
 			Where("team_name = ?", t.TeamName).
 			Count(&count).Error; err != nil {
 			return err
@@ -25,7 +25,7 @@ func (r *TeamRepo) CreateTeam(ctx context.Context, t models.TeamResp) error {
 			return apierr.ErrTeamExists
 		}
 
-		if err := tx.Create(&models.TeamResp{
+		if err := tx.Create(&models.Team{
 			TeamName: t.TeamName,
 		}).Error; err != nil {
 			return err
@@ -50,7 +50,7 @@ func (r *TeamRepo) CreateTeam(ctx context.Context, t models.TeamResp) error {
 
 func (r *TeamRepo) GetTeam(ctx context.Context, name string) (models.TeamResp, error) {
 
-	var t models.TeamResp
+	var t models.Team
 	if err := r.DB.WithContext(ctx).Where("team_name = ?", name).First(&t).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return models.TeamResp{}, apierr.ErrTeamNotFound
