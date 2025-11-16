@@ -4,16 +4,6 @@
 
 ---
 
-## Стек технологий
-
-- Язык: Go  
-- Web-фреймворк: `github.com/labstack/echo/v4`  
-- ORM: `gorm.io/gorm` + `gorm.io/driver/postgres`  
-- База данных: PostgreSQL  
-- Контейнеризация: Docker + docker-compose  
-- Логирование: простой обёрнутый логгер (`internal/logging`)
-
----
 
 ## Структура проекта
 
@@ -30,6 +20,7 @@ internal/service          – бизнес-логика (назначение р
 internal/handlers         – HTTP-хэндлеры, маппинг доменных ошибок в HTTP-коды
 internal/apierr           – доменные ошибки и формат ответа ErrorResponse
 
+loadtest/pr_loadtest.js   – тестовая нагрузка
 db/migrations             – SQL-миграции (инициализация схемы БД)
 openapi.yml               – OpenAPI-спецификация сервиса
 Dockerfile                – сборка контейнера приложения
@@ -52,23 +43,8 @@ cp .env.example .env
 
 2. Заполнить значения в `.env`:
 
-```env
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=pull_request
-
-DB_URL=postgres://postgres:postgres@db:5432/pull_request?sslmode=disable
-
-PORT=8080
-```
 
 3. Поднять сервис:
-
-```bash
-docker-compose up --build
-```
-
-или через Makefile:
 
 ```bash
 make up
@@ -81,53 +57,6 @@ make up
 
 Миграции применяются автоматически при старте контейнера Postgres  
 (через `./db/migrations` и `docker-entrypoint-initdb.d`).
-
----
-
-## Makefile
-
-В корне проекта есть `Makefile` с основными командами для разработки и запуска:
-
-```makefile
-BINARY_NAME = pr-service
-
-.PHONY: build run test tidy up down logs
-
-build:
-	go build -o bin/$(BINARY_NAME) ./cmd/server
-
-run:
-	go run ./cmd/server
-
-test:
-	go test ./...
-
-tidy:
-	go mod tidy
-
-lint:
-	golangci-lint run ./...
-
-up:
-	docker-compose up --build
-
-down:
-	docker-compose down -v
-
-logs:
-	docker-compose logs -f
-```
-
-Полезные команды:
-
-- `make build` – собрать бинарник `bin/pr-service`.  
-- `make run` – запустить сервис локально без Docker.  
-- `make test` – прогнать все тесты `go test ./...`.  
-- `make tidy` – привести зависимости в порядок (`go mod tidy`).  
-- `make lint` – запустить линтер `golangci-lint run ./...`.  
-- `make up` – поднять Postgres и сервис через `docker-compose up --build`.  
-- `make down` – остановить и удалить контейнеры и volume’ы (`docker-compose down -v`).  
-- `make logs` – посмотреть логи `docker-compose logs -f`.
 
 ---
 
@@ -163,6 +92,68 @@ logs:
 
 ---
 
+## Makefile
+
+В корне проекта есть `Makefile` с основными командами для разработки и запуска:
+
+```makefile
+BINARY_NAME = pr-service
+
+.PHONY: build run test tidy up down logs loadtest
+
+build:
+	go build -o bin/$(BINARY_NAME) ./cmd/server
+
+run:
+	go run ./cmd/server
+
+test:
+	go test ./...
+
+tidy:
+	go mod tidy
+
+lint:
+	golangci-lint run ./...
+
+up:
+	docker-compose --profile dev up -d --build
+
+up-test:
+	docker-compose --profile test up -d --build
+
+down:
+	docker-compose --profile dev down -v
+
+down-test:
+	docker-compose --profile test down -v
+
+logs:
+	docker-compose --profile dev logs -f
+
+logs-test:
+	docker-compose --profile test logs -f
+
+loadtest:
+	k6 run loadtest/pr_loadtest.js
+```
+
+Полезные команды:
+
+- `make build` – собрать бинарник `bin/pr-service`.  
+- `make run` – запустить сервис локально без Docker.  
+- `make test` – прогнать все тесты `go test ./...`.  
+- `make tidy` – привести зависимости в порядок (`go mod tidy`).  
+- `make lint` – запустить линтер `golangci-lint run ./...`.  
+- `make up` – поднять Postgres и сервис через `docker-compose --profile dev up -d --build`.  
+- `make up-test` – поднять Postgres и сервис через `docker-compose --profile test up -d --build`.  
+- `make down` – остановить и удалить контейнеры и volume’ы (`docker-compose --profile dev down -v`).  
+- `make down-test` – остановить и удалить контейнеры и volume’ы (`docker-compose --profile test down -v`). 
+- `make logs` – посмотреть логи `docker-compose --profile dev logs -f`.
+- `make logs-test` – посмотреть логи `docker-compose --profile test logs -f`.
+
+---
+
 ## Линтер
 
 В проекте используется [golangci-lint](https://golangci-lint.run/) с конфигурацией в файле `.golangci.yml` в корне репозитория.
@@ -175,6 +166,8 @@ logs:
 - `errcheck` — проверка, что ошибки не игнорируются.
 
 ### Установка и запуск
+
+
 
 Установка:
 
@@ -193,6 +186,79 @@ make lint
 ```bash
 golangci-lint run ./...
 ```
+
+---
+
+## Нагрузочное тестирование
+
+Для оценки производительности сервиса было проведено нагрузочное тестирование с помощью k6.
+
+### Сценарий
+
+- Сервис и PostgreSQL поднимаются через:
+
+  ```bash
+  make up-test
+  ```
+
+- В setup() скрипта нагрузочного теста создаются 20 команд
+  (loadtest-team-1 … loadtest-team-20) с суммарно 200 активными пользователями.
+- В течение 30 секунд 20 виртуальных пользователей (VUs) выполняют следующий сценарий (в цикле):
+
+  1. POST /pullRequest/create — создание нового PR от случайного автора из случайной команды
+     (автоматическое назначение до двух ревьюверов из команды автора).
+  2. GET /users/getReview?user_id=... — получение списка PR'ов, где пользователь выступает ревьювером.
+  3. GET /stats/reviewers — получение агрегированной статистики по ревьюверам.
+
+  Между итерациями добавлена небольшая пауза sleep(0.1), имитирующая задержки реальных пользователей.
+
+Скрипт нагрузочного теста лежит в репозитории:
+loadtest/pr_loadtest.js.
+
+Запуск (пример для Windows/PowerShell):
+
+    k6 run loadtest/pr_loadtest.js
+
+### Результаты
+
+По одному из прогонов при 20 командах и 200 пользователях:
+
+- Общее количество запросов: 13 352 за ~30 секунд
+  (≈ 440–441 запрос/сек).
+- Время ответа одного HTTP-запроса (http_req_duration):
+  - среднее: ~11.2 ms
+  - p(90): ~28.6 ms
+  - p(95): ~38.3 ms
+  - максимум: ~91.6 ms
+- Время выполнения полного сценария из трёх запросов
+  (создание PR + получение списка PR на ревью + статистика), iteration_duration:
+  - p(95): ~175.5 ms
+  - максимум: ~246.3 ms
+- Ошибки на уровне HTTP:
+  - http_req_failed: 0% (ошибок 4xx/5xx не зафиксировано).
+- Все проверки в k6 (checks) успешно пройдены: 100%.
+
+### Соответствие требованиям (SLI)
+
+Требования к нагрузке и задержкам:
+
+- Объём данных: до 20 команд и до 200 пользователей.
+- Нагрузка: RPS — 5.
+- SLI времени ответа: ≤ 300 ms.
+- SLI успешности: 99.9%.
+
+Фактические результаты теста:
+
+- При объёме данных 20 команд / 200 пользователей сервис обрабатывает порядка
+  440 RPS, что в десятки раз выше требуемых 5 RPS.
+- Для отдельных HTTP-запросов (http_req_duration) p(95) ≈ 38 ms, максимум ≈ 92 ms.
+- Для полного сценария (создание PR + два чтения) p(95) ≈ 175 ms, максимум ≈ 246 ms.
+- Успешность запросов по метрике http_req_failed составляет 100%, что выше требуемых 99.9%.
+
+Таким образом, при «умеренном» объёме данных (20 команд, 200 пользователей) сервис с запасом
+удовлетворяет заданным требованиям по производительности и надёжности: p95 и максимальное время
+ответа как отдельных запросов, так и полного сценария остаются ниже 300 мс, а доля успешных
+запросов превышает 99.9%.
 
 ---
 

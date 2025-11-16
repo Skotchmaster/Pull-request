@@ -36,7 +36,7 @@ func main() {
 	)
 	defer stop()
 
-	gdb, err := appdb.Init(ctx, cfg.DBURL)
+	gdb, err := appdb.Init(ctx, cfg.DBURL())
 	if err != nil {
 		logger.Errorf("failed to init db: %v", err)
 		os.Exit(1)

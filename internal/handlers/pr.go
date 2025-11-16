@@ -15,13 +15,6 @@ type PullRequestHandler struct {
 	Logger  logging.Logger
 }
 
-func NewPullRequestHandler(s *service.PullRequestService, Logger logging.Logger) *PullRequestHandler {
-	return &PullRequestHandler{
-		Service: s,
-		Logger:  Logger,
-	}
-}
-
 type createPullRequestRequest struct {
 	PullRequestID   string `json:"pull_request_id"`
 	PullRequestName string `json:"pull_request_name"`
