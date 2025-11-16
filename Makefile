@@ -11,6 +11,11 @@ run:
 test:
 	go test ./...
 
+test-reset:
+	docker-compose --profile test up -d --build
+	go test ./...
+	docker-compose --profile test down -v
+
 tidy:
 	go mod tidy
 
@@ -24,10 +29,7 @@ up-test:
 	docker-compose --profile test up -d --build
 
 down:
-	docker-compose --profile dev down -v
-
-down-test:
-	docker-compose --profile test down -v
+	docker-compose --profile dev --profile test down -v
 
 logs:
 	docker-compose --profile dev logs -f

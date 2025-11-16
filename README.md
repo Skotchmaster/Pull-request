@@ -110,6 +110,11 @@ run:
 test:
 	go test ./...
 
+test-reset:
+	docker-compose --profile test up -d --build
+	go test ./...
+	docker-compose --profile test down -v
+
 tidy:
 	go mod tidy
 
@@ -123,10 +128,7 @@ up-test:
 	docker-compose --profile test up -d --build
 
 down:
-	docker-compose --profile dev down -v
-
-down-test:
-	docker-compose --profile test down -v
+	docker-compose --profile dev --profile test down -v
 
 logs:
 	docker-compose --profile dev logs -f
@@ -143,12 +145,12 @@ loadtest:
 - `make build` – собрать бинарник `bin/pr-service`.  
 - `make run` – запустить сервис локально без Docker.  
 - `make test` – прогнать все тесты `go test ./...`.  
+- `make test-rest` – Запустить тестовое окружение - прогнать все тесты `go test ./...` - удалить тестовое окружение.  
 - `make tidy` – привести зависимости в порядок (`go mod tidy`).  
 - `make lint` – запустить линтер `golangci-lint run ./...`.  
 - `make up` – поднять Postgres и сервис через `docker-compose --profile dev up -d --build`.  
 - `make up-test` – поднять Postgres и сервис через `docker-compose --profile test up -d --build`.  
-- `make down` – остановить и удалить контейнеры и volume’ы (`docker-compose --profile dev down -v`).  
-- `make down-test` – остановить и удалить контейнеры и volume’ы (`docker-compose --profile test down -v`). 
+- `make down` – остановить и удалить контейнеры и volume’ы (`docker-compose --profile dev --profile test down -v`).  
 - `make logs` – посмотреть логи `docker-compose --profile dev logs -f`.
 - `make logs-test` – посмотреть логи `docker-compose --profile test logs -f`.
 
@@ -167,8 +169,6 @@ loadtest:
 
 ### Установка и запуск
 
-
-
 Установка:
 
 ```bash
@@ -186,6 +186,51 @@ make lint
 ```bash
 golangci-lint run ./...
 ```
+
+---
+
+## Тестирование
+
+В проекте основной упор сделан на интеграционные / e2e-тесты, которые ходят в уже запущенный тестовый сервис по HTTP и проверяют его поведение.
+
+Тесты лежат в пакете:
+
+    internal/integration
+
+Все они используют общий helper `testEnv` из `common.go`, который создаёт HTTP-клиент и базовый URL сервиса (`BASE_URL`, по умолчанию `http://localhost:8081`). Поверх него построены небольшие хелперы:
+
+- `createTeam`, `getTeam` — работа с командами через `/team/add` и `/team/get`;
+- `createPR`, `mergePR`, `reassignReviewer` — создание PR, merge и переназначение ревьюверов через `/pullRequest/*`;
+- `getReview`, `setUserIsActive` — получение PR’ов пользователя и смена флага активности через `/users/*`;
+- `getReviewerStats` — получение агрегированной статистики по ревьюверам через `/stats/reviewers`.
+
+На базе этих хелперов написаны интеграционные и e2e-тесты, которые покрывают основные сценарии:
+
+- создание и чтение команды;
+- создание PR и автоматическое назначение до двух активных ревьюверов из команды автора;
+- merge PR (в том числе идемпотентный) и переназначение ревьювера;
+- получение списка PR’ов, где пользователь выступает ревьювером;
+- получение агрегированной статистики по ревьюверам.
+
+Тесты используют отдельную тестовую БД и отдельный Docker-профиль `test` (контейнеры `app-test` и `db-test`), поэтому они не затрагивают основную базу данных.
+
+### Запуск интеграционных тестов через Docker
+
+Для полного цикла «поднять тестовое окружение → прогнать тесты → всё остановить» используется таргет Makefile:
+
+    make test-reset
+
+Эта команда:
+
+1. поднимает тестовый стек (`docker-compose --profile test up -d --build`);
+2. запускает все Go-тесты (`go test ./...`), включая `internal/integration`;
+3. останавливает и удаляет контейнеры и volume с тестовой БД (`docker-compose --profile test down -v`).
+
+Такой режим удобно использовать для повторяемых прогонов «с нуля» — каждый запуск начинается с чистого окружения.
+
+Так же можно запускать тесты не поднимая тестовое кружение с помощью таргета Makefile:
+
+    make test
 
 ---
 
