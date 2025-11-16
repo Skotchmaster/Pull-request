@@ -84,31 +84,6 @@ make up
 
 ---
 
-## Локальный запуск без Docker
-
-1. Поднять PostgreSQL локально.  
-2. Применить миграции из `db/migrations/001_init.sql`.  
-3. Экспортировать переменные окружения:
-
-```bash
-export DB_URL=postgres://user:pass@localhost:5432/db_name?sslmode=disable
-export PORT=8080
-```
-
-4. Запустить сервис:
-
-```bash
-go run ./cmd/server
-```
-
-или через Makefile:
-
-```bash
-make run
-```
-
----
-
 ## Makefile
 
 В корне проекта есть `Makefile` с основными командами для разработки и запуска:
