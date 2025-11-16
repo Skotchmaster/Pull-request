@@ -122,6 +122,19 @@ components:
         status:
           type: string
           enum: [OPEN, MERGED]
+    ReviewerStat:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: Identifier of the reviewer.
+        assignments:
+          type: integer
+          format: int64
+          description: Number of pull requests where this user is assigned as a reviewer.
+      required:
+        - user_id
+        - assignments
 
 paths:
   /team/add:
@@ -563,3 +576,28 @@ paths:
                 error:
                   code: INTERNAL
                   message: internal error
+  /stats/reviewers:
+    get:
+      summary: Reviewer assignment statistics
+      description: Returns aggregated statistics of how many times each user was assigned as a reviewer.
+      operationId: getReviewerStats
+      tags:
+        - stats
+      responses:
+        '200':
+          description: Statistics by reviewers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviewer_stats:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReviewerStat'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

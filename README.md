@@ -26,7 +26,8 @@ openapi.yml               – OpenAPI-спецификация сервиса
 Dockerfile                – сборка контейнера приложения
 docker-compose.yml        – запуск Postgres и сервиса
 .env.example              – пример .env-файла
-Makefile                  – вспомогательные команды (*nix)
+Makefile                  – вспомогательные команды
+.golangci.yml             – линтер
 ```
 
 ---
